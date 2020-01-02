@@ -16,6 +16,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Secutity.IssuerJWT.Configurations;
 using Secutity.IssuerJWT.Models;
 using System.Security.Claims;
+using Swashbuckle.AspNetCore.Swagger;
 
 namespace Secutity.IssuerJWT
 {
@@ -46,6 +47,20 @@ namespace Secutity.IssuerJWT
                .AddDefaultUI(UIFramework.Bootstrap4)
                 .AddEntityFrameworkStores<ApplicationDbContext>();
 
+
+            services.AddSwaggerGen(c =>
+            {
+                c.AddSecurityDefinition("Bearer", new ApiKeyScheme()
+                {
+                    Description = "Authorization format : Bearer {token}",
+                    Name = "Authorization",
+                    In = "header",
+                    Type = "apiKey"
+                });
+
+                c.SwaggerDoc("v1", new Info { Title = "OauthJwtApi", Version = "v1" });
+            });
+
             // configure jwt server
 
             services.Configure<JwtIssuer>(Configuration.GetSection(nameof(JwtIssuer)));
@@ -72,9 +87,15 @@ namespace Secutity.IssuerJWT
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-            app.UseCookiePolicy();
-
             app.UseAuthentication();
+
+            app.UseSwagger();
+
+            // Enable middleware to serve swagger-ui (HTML, JS, CSS etc.), specifying the Swagger JSON endpoint.
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "OauthJwtApi");
+            });
 
             app.UseMvc(routes =>
             {
@@ -82,17 +103,17 @@ namespace Secutity.IssuerJWT
                     name: "default",
                     template: "{controller=Home}/{action=Index}/{id?}");
             });
-            using (var serviceScope = serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope())
-            {
+            //using (var serviceScope = serviceProvider.GetRequiredService<IServiceScopeFactory>().CreateScope())
+            //{
 
-                var roleManager = serviceScope.ServiceProvider.GetService<RoleManager<IdentityRole>>();
-                var userManager = serviceScope.ServiceProvider.GetService<UserManager<ApplicationUser>>();
-                if (userManager.Users.Count() == 0)
-                {
-                    Task.Run(() => InitRoles(roleManager)).Wait();
-                    Task.Run(() => InitUsers(userManager)).Wait();
-                }
-            }
+            //    var roleManager = serviceScope.ServiceProvider.GetService<RoleManager<IdentityRole>>();
+            //    var userManager = serviceScope.ServiceProvider.GetService<UserManager<ApplicationUser>>();
+            //    if (userManager.Users.Count() == 0)
+            //    {
+            //        Task.Run(() => InitRoles(roleManager)).Wait();
+            //        Task.Run(() => InitUsers(userManager)).Wait();
+            //    }
+            //}
         }
 
         private static async Task InitRoles(RoleManager<IdentityRole> roleManager)
@@ -111,17 +132,17 @@ namespace Secutity.IssuerJWT
 
         private static async Task InitUsers(UserManager<ApplicationUser> userManager)
         {
-            var user = new ApplicationUser() { UserName = "employee", Email = "employee@xyz.com" };
-            await userManager.CreateAsync(user, "password");
+            var user = new ApplicationUser() { UserName = "employee", Email = "employee@gmail.com" };
+            await userManager.CreateAsync(user, "000000");
             await userManager.AddToRoleAsync(user, "Employee");
 
-            user = new ApplicationUser() { UserName = "hrworker", Email = "hrworker@xyz.com" };
-            await userManager.CreateAsync(user, "password");
+            user = new ApplicationUser() { UserName = "hrworker", Email = "hrworker@gmail.com" };
+            await userManager.CreateAsync(user, "111111");
             await userManager.AddToRoleAsync(user, "Employee");
             await userManager.AddToRoleAsync(user, "HR-Worker");
 
-            user = new ApplicationUser() { UserName = "hrmanager", Email = "hrmanager@xyz.com" };
-            await userManager.CreateAsync(user, "password");
+            user = new ApplicationUser() { UserName = "hrmanager", Email = "hrmanager@gmail.com" };
+            await userManager.CreateAsync(user, "222222");
             await userManager.AddToRoleAsync(user, "Employee");
             await userManager.AddToRoleAsync(user, "HR-Worker");
             await userManager.AddToRoleAsync(user, "HR-Manager");
